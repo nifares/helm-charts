@@ -1,0 +1,141 @@
+# Default values for valheim.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: lloesche/valheim-server
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+server:
+  name: "myServer"
+  worldName: "kubernetes"
+  public: true
+  statusPage: false
+  supervisorPage: false
+  serverPassword: ""
+  serverPasswordSecret: ""
+  serverPasswordKey: "serverPassword"
+  supervisorUser: "admin"
+  supervisorPassword: ""
+  supervisorPasswordSecret: ""
+  supervisorPasswordKey: "supervisorPassword"
+  backups:
+    enabled: true
+    cron: "0 * * * *"
+    directory: /config/backups
+    maxAge: 3
+    maxCount: 0
+    backupsIdle: true
+    gracePeriod: 3600
+    zip: true
+
+# any additional environment variables to configure server
+# that are not covered above
+# https://github.com/lloesche/valheim-server-docker#environment-variables
+extraEnvironmentVars: {}
+
+services:
+  annotations: {}
+  labels: {}
+  tcp:
+    type: ClusterIP
+    statusPort: 80
+    statusPortName: status
+    supervisorPort: 8001
+    supervisorPortName: supervisor
+    annotations: {}
+      # Additional annotations
+    labels: {}
+      # Additional entries here will be added to the service spec. Cannot contain
+      # type, selector or ports entries.
+    spec: {}
+      # externalTrafficPolicy: Cluster
+      # loadBalancerIP: "1.2.3.4"
+      # clusterIP: "2.3.4.5"
+    externalIPs: []
+      # - 1.2.3.4
+  udp:
+    type: ClusterIP
+    serverPort: 2456
+    serverPortName: server
+    annotations: {}
+      # Additional annotations
+    labels: {}
+      # Additional entries here will be added to the service spec. Cannot contain
+      # type, selector or ports entries.
+    spec: {}
+      # externalTrafficPolicy: Cluster
+      # loadBalancerIP: "1.2.3.4"
+      # clusterIP: "2.3.4.5"
+    externalIPs: []
+      # - 1.2.3.4
+
+
+persistence:
+  # persist server installation
+  serverData:
+    # if disabled data will be stored in "emptyDir"
+    # and will share container lifecycle
+    enabled: false
+    # can be either hostPath or pvc
+    type: hostPath
+    path: /opt/valheim
+    pvc:
+      # storageClassName: default
+      accessModes:
+      - ReadWriteOnce
+      size: 5Gi
+      # annotations: {}
+      # selectorLabels: {}
+      # subPath: ""
+      # existingClaim:
+  # persist world files
+  worldData:
+    # if disabled data will be stored in "emptyDir"
+    # and will share container lifecycle
+    enabled: false
+    # can be either hostPath or pvc
+    type: hostPath
+    path: /config
+    pvc:
+      # storageClassName: default
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+      # annotations: {}
+      # selectorLabels: {}
+      # subPath: ""
+      # existingClaim:
+  
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+
+resources: {}
+  #requests:
+  #  cpu: 2
+  #  memory: 2Gi
+  #limits:
+  #  cpu: 4
+  #  memory:  4Gi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

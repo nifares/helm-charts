@@ -1,0 +1,35 @@
+{{- if or (and .Values.server.public .Values.server.statusPage) .Values.server.supervisorPage }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "valheim.fullname" . }}-tcp
+  labels:
+    {{- include "valheim.labels" . | nindent 4 }}
+    {{- with (merge .Values.services.labels .Values.services.tcp.labels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with (merge .Values.services.annotations .Values.services.tcp.annotations) }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.services.tcp.type }}
+  {{- with .Values.services.tcp.spec }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  ports:
+    {{-  if and .Values.server.public .Values.server.statusPage }}
+    - port: {{ .Values.services.tcp.statusPort | int }}
+      targetPort: {{ .Values.services.tcp.statusPortName }}
+      protocol: TCP
+      name:  {{ .Values.services.tcp.statusPortName }}
+    {{- end }}
+    {{- if .Values.server.supervisorPage }}
+    - port:  {{ .Values.services.tcp.supervisorPort | int }}
+      targetPort: {{ .Values.services.tcp.supervisorPortName }}
+      protocol: TCP
+      name:  {{ .Values.services.tcp.supervisorPortName }}
+    {{- end }}
+  selector:
+    {{- include "valheim.selectorLabels" . | nindent 4 }}
+{{- end }}

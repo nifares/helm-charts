@@ -1,0 +1,29 @@
+Valheim server was succesfully deployed.
+
+{{- $secret := ( include "valheim.fullname" . ) -}}
+{{- if ( include "valheim.server.useExistingSecret" . ) -}}
+{{- $secret := .Values.server.serverPasswordSecret -}}
+{{- end }}
+
+To get valheim-server password run:
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ $secret }} -o jsonpath="{.data.{{ .Values.server.serverPasswordKey }}}" | base64 --decode
+
+{{- if .Values.server.supervisorPage }}
+{{- $secret := ( include "valheim.fullname" . ) -}}
+{{- if ( include "valheim.supervisor.useExistingSecret" . ) -}}
+{{- $secret := .Values.server.supervisorPasswordSecret -}}
+{{- end }}
+To get valheim supervisor password run:
+  kubectl get secret --namespace {{ .Release.Namespace }} {{ $secret }} -o jsonpath="{.data.{{ .Values.server.supervisorPasswordKey }}}" | base64 --decode
+{{ end }}
+
+
+{{ if not .Values.persistence.worldData.enabled }}
+--------------------------------------------------------
+ WARNING
+
+	world data is not persisted!
+	you will lose your progress on container restart
+
+--------------------------------------------------------
+{{- end }}

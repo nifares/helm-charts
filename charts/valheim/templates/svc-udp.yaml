@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "valheim.fullname" . }}-udp
+  labels:
+    {{- include "valheim.labels" . | nindent 4 }}
+    {{- with (merge .Values.services.labels .Values.services.udp.labels) }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with (merge .Values.services.annotations .Values.services.udp.annotations) }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.services.udp.type }}
+  {{- with .Values.services.udp.spec }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.services.udp.serverPort | int }}
+      targetPort: {{ .Values.services.udp.serverPortName }}
+      protocol: UDP
+      name:  {{ .Values.services.udp.serverPortName }}
+    {{- if .Values.server.public }}
+    - port: {{ .Values.services.udp.serverPort | int | add 1}}
+      targetPort: {{ .Values.services.udp.serverPortName }}-query
+      protocol: UDP
+      name:  {{ .Values.services.udp.serverPortName }}-query
+    {{- end }}
+
+  selector:
+    {{- include "valheim.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "valheim.fullname" . }}
+  labels:
+    {{- include "valheim.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "valheim.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "valheim.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: valheim-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: SERVER_NAME
+            value: {{ .Values.server.name }}
+          - name: WORLD_NAME
+            value: {{ .Values.server.worldName }}
+          - name: SERVER_PUBLIC
+            value: {{ .Values.server.public | quote }}
+          - name: SERVER_PORT
+            value: {{ .Values.services.udp.serverPort | quote }}
+          - name: SERVER_PASS
+            valueFrom:
+              secretKeyRef:
+                {{- if .Values.server.serverPasswordSecret }}
+                name: {{ .Values.server.supervisorPasswordSecret }}
+                {{- else }}
+                name: {{ include "valheim.fullname" . }}
+                {{- end }}
+                key: {{ .Values.server.serverPasswordKey }}
+          {{- if and .Values.server.statusPage .Values.server.public }}
+          - name: STATUS_HTTP
+            value: "true"
+          - name: STATUS_HTTP_PORT
+            value: {{ .Values.services.tcp.statusPort | quote }}
+          {{- end }}
+          {{- if .Values.server.supervisorPage }}
+          - name: SUPERVISOR_HTTP
+            value: "true"
+          - name: SUPERVISOR_HTTP_PORT
+            value: {{ .Values.services.tcp.supervisorPort | quote }}
+          - name: SUPERVISOR_HTTP_USER
+            value: {{ .Values.server.supervisorUser }}
+          - name: SUPERVISOR_HTTP_PASS
+            valueFrom:
+              secretKeyRef:
+                {{- if .Values.server.supervisorPasswordSecret }}
+                name: {{ .Values.server.supervisorPasswordSecret }}
+                {{- else }}
+                name: {{ include "valheim.fullname" . }}
+                {{- end }}
+                key: {{ .Values.server.supervisorPasswordKey }}
+          {{- end }}
+          {{- include "valheim.server.backups" . | nindent 10 }}
+
+          ports:
+          - name: {{ .Values.services.udp.serverPortName }}
+            containerPort: {{ .Values.services.udp.serverPort | int }}
+            protocol: UDP
+          {{- if .Values.server.public }}
+          - name: {{ .Values.services.udp.serverPortName }}-query
+            containerPort: {{ .Values.services.udp.serverPort | int | add 1 }}
+            protocol: UDP
+          {{- if .Values.server.statusPage }}
+          - name: {{ .Values.services.tcp.statusPortName }}
+            containerPort: {{ .Values.services.tcp.statusPort | int }}
+            protocol: TCP
+          {{- end }}
+          {{- end }}
+          {{- if .Values.server.supervisorPage }}
+          - name: {{ .Values.services.tcp.supervisorPortName }}
+            containerPort: {{ .Values.services.tcp.supervisorPort | int }}
+            protocol: TCP
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: {{ .Values.persistence.serverData.path }}
+            name: server-files
+          - mountPath: {{ .Values.persistence.worldData.path }}
+            name: world-files
+      volumes:
+        {{- include "valheim.volumes" . | nindent 8 }}
+
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
