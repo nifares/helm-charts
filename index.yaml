@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  valheim:
+  - apiVersion: v2
+    appVersion: 0.156.2
+    created: "2021-09-08T23:15:03.548178995Z"
+    description: Chart for deploying valheim-server to a Kubernetes cluster
+    digest: 4feae7a214019c820f4460e3095e3d5810d87d2eefdf5c9acd10f1bc6e4b79fe
+    name: valheim
+    type: application
+    urls:
+    - https://github.com/nifares/helm-charts/releases/download/valheim-0.1.1/valheim-0.1.1.tgz
+    version: 0.1.1
+generated: "2021-09-08T23:15:03.301534402Z"
